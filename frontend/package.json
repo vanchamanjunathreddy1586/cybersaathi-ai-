@@ -1,0 +1,45 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "test": "node --test --experimental-strip-types tests/auth.test.ts tests/duplicate-signup.test.ts tests/system-status.test.ts tests/fraud-recovery.test.ts tests/app-scanner.test.ts tests/call-scanner.test.ts tests/family-safety.test.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nexconn/call": "^26.2.1",
+    "@nexconn/chat": "^26.2.1",
+    "@nexconn/chatui": "^26.2.5",
+    "@nexconn/engine": "^26.2.1",
+    "@supabase/supabase-js": "^2.119.0",
+    "framer-motion": "^14.9.1",
+    "jspdf": "^4.2.1",
+    "lit": "^3.3.2",
+    "lucide-react": "^1.69.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.5",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.6"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
+}

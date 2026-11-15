@@ -1,0 +1,9 @@
+{
+  "name": "cybersaathi-browser-extension",
+  "version": "1.0.0",
+  "description": "CyberSaathi AI Browser Protection Extension",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/heuristics.test.js"
+  }
+}

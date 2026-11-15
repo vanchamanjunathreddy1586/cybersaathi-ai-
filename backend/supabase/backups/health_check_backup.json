@@ -1,0 +1,10 @@
+{
+  "exportedAt": "2026-11-12T20:16:58.797Z",
+  "sourceTable": "public.health_check",
+  "rowCount": 1,
+  "rows": [
+    {
+      "id": 1
+    }
+  ]
+}

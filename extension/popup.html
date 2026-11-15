@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberSaathi AI Protection</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <span class="brand-badge">SHIELD</span>
+        <strong>CyberSaathi AI</strong>
+      </div>
+      <span class="env-tag">V1.0</span>
+    </header>
+
+    <!-- Active Site Status Card -->
+    <main class="popup-body">
+      <div class="site-card">
+        <div class="site-card-top">
+          <div class="site-info">
+            <span class="label">CURRENT WEBSITE</span>
+            <strong id="site-hostname" class="site-hostname">Checking tab…</strong>
+          </div>
+          <div id="verdict-pill" class="verdict-pill safe">
+            SAFE
+          </div>
+        </div>
+
+        <div class="score-bar-wrap">
+          <div class="score-label">
+            <span>Heuristic Risk Score</span>
+            <strong id="risk-score-text">0 / 100</strong>
+          </div>
+          <div class="score-track">
+            <div id="score-bar" class="score-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div id="indicators-list" class="indicators-list">
+          <!-- Populated by popup.js -->
+        </div>
+
+        <p id="recommendation-text" class="recommendation-text">
+          Evaluating offline security indicators…
+        </p>
+      </div>
+
+      <!-- Manual URL Inspection -->
+      <div class="manual-check-card">
+        <label for="url-input">Check Any Link Before Clicking</label>
+        <div class="input-row">
+          <input type="url" id="url-input" placeholder="Paste link (e.g. sbi.reward-gift.xyz)" />
+          <button id="btn-check" type="button" class="btn btn-primary">Check</button>
+        </div>
+      </div>
+
+      <!-- Quick Helplines -->
+      <footer class="popup-footer">
+        <div class="emergency-row">
+          <span>🚨 Indian Helpline: <strong>1930</strong></span>
+          <a href="https://sancharsaathi.gov.in" target="_blank" rel="noreferrer">Chakshu Report</a>
+        </div>
+        <a id="btn-open-app" href="http://localhost:5173" target="_blank" class="full-console-link">
+          Open Full CyberSaathi AI Console &rarr;
+        </a>
+      </footer>
+    </main>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

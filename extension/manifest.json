@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "CyberSaathi AI — Real-time Web Scam Protection",
+  "version": "1.0.0",
+  "description": "Privacy-first real-time phishing, deceptive banking, and Indian telecom cyber fraud defense.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "CyberSaathi AI Protection"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
