@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './apiBaseUrl.ts';
+import { supabase, supabaseConfigurationError } from '../auth/supabase.ts';
 const REQUEST_TIMEOUT_MS = 8_000;
 
 export interface HealthResponse {
@@ -91,7 +92,7 @@ async function fetchJson<T>(
       response = await fetch(`${API_BASE_URL}${path}`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        credentials: 'omit',
+        credentials: 'same-origin',
         signal: controller.signal,
       });
     } catch (error) {
@@ -123,7 +124,9 @@ async function fetchJson<T>(
         ? (retryAfterSeconds
             ? `Rate limit reached. Try again in ${retryAfterSeconds} seconds.`
             : 'Rate limit reached. Please wait before retrying.')
-        : `The API request failed with status ${response.status}`;
+        : response.status === 401
+          ? 'The API request was rejected (401 Unauthorized). Verify VITE_API_BASE_URL and deployment access protection.'
+          : `The API request failed with status ${response.status}`;
 
       throw new ApiRequestError(
         errorMessage,
@@ -173,8 +176,38 @@ export function checkBackendHealth(
   return fetchJson('/api/health', isHealthResponse, signal);
 }
 
-export function checkSupabaseHealth(
+export async function checkSupabaseHealth(
   signal?: AbortSignal,
 ): Promise<SupabaseHealthResponse> {
+  // If a dedicated backend API is configured, probe through the backend first
+  if (API_BASE_URL) {
+    try {
+      return await fetchJson('/api/health/supabase', isSupabaseHealthResponse, signal);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      // If backend probe fails, check whether Supabase is reachable directly
+    }
+  }
+
+  // Direct client-side Supabase database query probe
+  if (supabase && !supabaseConfigurationError) {
+    try {
+      const { error } = await supabase
+        .from('health_check')
+        .select('id')
+        .limit(1);
+
+      if (!error) {
+        return {
+          success: true,
+          service: 'supabase',
+          status: 'connected',
+        };
+      }
+    } catch (queryErr) {
+      if (signal?.aborted) throw queryErr;
+    }
+  }
+
   return fetchJson('/api/health/supabase', isSupabaseHealthResponse, signal);
 }

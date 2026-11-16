@@ -1,8 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
-const supabasePublishableKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+const nodeEnv =
+  typeof globalThis !== 'undefined' && 'process' in globalThis
+    ? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+    : undefined;
+
+const supabaseUrl = (
+  import.meta.env?.VITE_SUPABASE_URL ?? nodeEnv?.VITE_SUPABASE_URL
+)?.trim();
+
+const supabasePublishableKey = (
+  import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? nodeEnv?.VITE_SUPABASE_PUBLISHABLE_KEY
+)?.trim();
 
 function isValidSupabaseUrl(value: string | undefined): value is string {
   if (!value) {
