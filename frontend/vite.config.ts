@@ -4,6 +4,17 @@ import { defineConfig, loadEnv } from 'vite'
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), '')
 
+  // Accept the unprefixed names (as configured on Netlify) as a fallback.
+  // The Supabase URL and publishable key are safe to expose to the browser.
+  const supabaseUrlValue =
+    environment.VITE_SUPABASE_URL?.trim() || environment.SUPABASE_URL?.trim() || ''
+  const supabaseKeyValue =
+    environment.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    environment.SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    ''
+  environment.VITE_SUPABASE_URL = supabaseUrlValue
+  environment.VITE_SUPABASE_PUBLISHABLE_KEY = supabaseKeyValue
+
   if (mode === 'production') {
     const missingVariables = [
       ...(!environment.VITE_SUPABASE_URL?.trim() ? ['VITE_SUPABASE_URL'] : []),
@@ -13,7 +24,7 @@ export default defineConfig(({ mode }) => {
     ]
     if (missingVariables.length) {
       throw new Error(
-        `Missing production environment variables: ${missingVariables.join(', ')}`,
+        `Missing production environment variables: ${missingVariables.join(', ')} (or their unprefixed SUPABASE_* equivalents)`,
       )
     }
     if (
@@ -62,5 +73,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrlValue),
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(supabaseKeyValue),
+    },
   }
 })
