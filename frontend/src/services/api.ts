@@ -46,9 +46,10 @@ function isHealthResponse(value: unknown): value is HealthResponse {
 
   const response = value as Record<string, unknown>;
   return (
-    response.success === true &&
-    response.message === 'CyberSaathi AI backend is running' &&
-    response.status === 'healthy'
+    response.status === 'healthy' &&
+    (response.success === true ||
+      response.app === 'CyberSaathi' ||
+      typeof response.message === 'string')
   );
 }
 
