@@ -21,9 +21,9 @@ import {
   joinFamilyCircle,
   broadcastCircleAlert,
   leaveFamilyCircle,
+  sanitizeUserFacingError,
   type FamilyCircleSummary,
   type CircleDetails,
-  FamilySafetyApiError,
 } from './familySafetyApi'
 import './family-safety.css'
 
@@ -61,7 +61,8 @@ export function FamilySafetyPage() {
   const [circles, setCircles] = useState<FamilyCircleSummary[]>([])
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
   const [circleDetails, setCircleDetails] = useState<CircleDetails | null>(null)
-  const [loading, setLoading] = useState(Boolean(session?.access_token))
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(session?.access_token ? 'loading' : 'success')
+  const [loadError, setLoadError] = useState<{ message: string; isDatabasePending: boolean } | null>(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -82,9 +83,13 @@ export function FamilySafetyPage() {
   const [broadcasting, setBroadcasting] = useState(false)
 
   const reloadCircles = useCallback(async (token: string, selectId?: string) => {
+    setLoadStatus('loading')
+    setLoadError(null)
+    setErrorMessage(null)
     try {
       const data = await fetchUserCircles(token)
       setCircles(data)
+      setLoadStatus('success')
       if (data.length > 0) {
         const targetId = selectId && data.some((c) => c.id === selectId) ? selectId : data[0].id
         setSelectedCircleId(targetId)
@@ -93,9 +98,9 @@ export function FamilySafetyPage() {
         setCircleDetails(null)
       }
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to load family circles.')
-    } finally {
-      setLoading(false)
+      const sanitized = sanitizeUserFacingError(err, 'Failed to load family circles.')
+      setLoadError(sanitized)
+      setLoadStatus('error')
     }
   }, [])
 
@@ -107,15 +112,16 @@ export function FamilySafetyPage() {
       .then((data) => {
         if (!active) return
         setCircles(data)
+        setLoadStatus('success')
         if (data.length > 0) {
           setSelectedCircleId((prev) => (prev && data.some((c) => c.id === prev) ? prev : data[0].id))
         }
-        setLoading(false)
       })
       .catch((err) => {
         if (!active) return
-        setErrorMessage(err instanceof Error ? err.message : 'Failed to load family circles.')
-        setLoading(false)
+        const sanitized = sanitizeUserFacingError(err, 'Failed to load family circles.')
+        setLoadError(sanitized)
+        setLoadStatus('error')
       })
 
     return () => {
@@ -135,7 +141,8 @@ export function FamilySafetyPage() {
       })
       .catch((err) => {
         if (!active) return
-        setErrorMessage(err instanceof Error ? err.message : 'Failed to load circle details.')
+        const sanitized = sanitizeUserFacingError(err, 'Failed to load circle details.')
+        setErrorMessage(sanitized.message)
         setDetailsLoading(false)
       })
 
@@ -152,7 +159,7 @@ export function FamilySafetyPage() {
 
   const handleCreateCircle = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!accessToken || !circleNameInput.trim()) return
+    if (submittingAction || !accessToken || !circleNameInput.trim()) return
     setSubmittingAction(true)
     setErrorMessage(null)
 
@@ -164,7 +171,8 @@ export function FamilySafetyPage() {
       setCircleNameInput('')
       await reloadCircles(accessToken, created.id)
     } catch (err) {
-      setErrorMessage(err instanceof FamilySafetyApiError ? err.message : 'Could not create family circle.')
+      const sanitized = sanitizeUserFacingError(err, 'Could not create family circle.')
+      setErrorMessage(sanitized.message)
     } finally {
       setSubmittingAction(false)
     }
@@ -172,7 +180,7 @@ export function FamilySafetyPage() {
 
   const handleJoinCircle = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!accessToken || !inviteCodeInput.trim()) return
+    if (submittingAction || !accessToken || !inviteCodeInput.trim()) return
     setSubmittingAction(true)
     setErrorMessage(null)
 
@@ -184,7 +192,8 @@ export function FamilySafetyPage() {
       setInviteCodeInput('')
       await reloadCircles(accessToken, joined.circle.id)
     } catch (err) {
-      setErrorMessage(err instanceof FamilySafetyApiError ? err.message : 'Could not join family circle.')
+      const sanitized = sanitizeUserFacingError(err, 'Could not join family circle.')
+      setErrorMessage(sanitized.message)
     } finally {
       setSubmittingAction(false)
     }
@@ -201,7 +210,7 @@ export function FamilySafetyPage() {
 
   const handleBroadcastAlert = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!accessToken || !selectedCircleId) return
+    if (broadcasting || !accessToken || !selectedCircleId) return
     setBroadcasting(true)
     setErrorMessage(null)
 
@@ -220,7 +229,8 @@ export function FamilySafetyPage() {
         })
       }
     } catch (err) {
-      setErrorMessage(err instanceof FamilySafetyApiError ? err.message : 'Failed to broadcast threat alert.')
+      const sanitized = sanitizeUserFacingError(err, 'Failed to broadcast threat alert.')
+      setErrorMessage(sanitized.message)
     } finally {
       setBroadcasting(false)
     }
@@ -236,7 +246,8 @@ export function FamilySafetyPage() {
       setSuccessMessage('You have left the safety circle.')
       await reloadCircles(accessToken)
     } catch (err) {
-      setErrorMessage(err instanceof FamilySafetyApiError ? err.message : 'Failed to leave circle.')
+      const sanitized = sanitizeUserFacingError(err, 'Failed to leave circle.')
+      setErrorMessage(sanitized.message)
     }
   }
 
@@ -303,8 +314,40 @@ export function FamilySafetyPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="page-loading" role="status">Loading Family Safety Circles…</div>
+      {loadStatus === 'loading' ? (
+        <div className="page-loading" role="status">
+          <div className="loading-spinner" />
+          <span>Loading Family Safety Circles…</span>
+        </div>
+      ) : loadStatus === 'error' ? (
+        <div className="family-error-card" role="alert">
+          <ShieldAlert className="error-icon" size={48} />
+          <h2>{loadError?.isDatabasePending ? 'Database Setup Required' : 'Unable to Load Family Circles'}</h2>
+          <p className="error-description">
+            {loadError?.message || 'Could not load Family Safety circles. Please verify your connection and try again.'}
+          </p>
+          {loadError?.isDatabasePending && (
+            <div className="migration-helper-box">
+              <AlertTriangle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Administrator Action Required:</strong>
+                <p style={{ margin: '0.25rem 0 0 0' }}>
+                  The remote Supabase PostgreSQL database tables for Family Safety have not been initialized yet.
+                  Please execute the migration script <code>CYBERSAATHI_FAMILY_SAFETY_FINAL_MIGRATION.sql</code> in the Supabase Dashboard SQL Editor, and verify with <code>CYBERSAATHI_FAMILY_SAFETY_VERIFY.sql</code>.
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="error-actions">
+            <button
+              className="button button-primary"
+              onClick={() => accessToken && reloadCircles(accessToken)}
+              type="button"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
       ) : circles.length === 0 ? (
         <div className="empty-state-card">
           <Users className="empty-icon" size={48} />
@@ -340,7 +383,12 @@ export function FamilySafetyPage() {
               <div
                 className={`circle-card${c.id === selectedCircleId ? ' active' : ''}`}
                 key={c.id}
-                onClick={() => setSelectedCircleId(c.id)}
+                onClick={() => {
+                  if (c.id !== selectedCircleId) {
+                    setSelectedCircleId(c.id);
+                    setDetailsLoading(true);
+                  }
+                }}
                 role="button"
                 tabIndex={0}
               >
@@ -582,6 +630,7 @@ export function FamilySafetyPage() {
                 <input
                   autoFocus
                   className="form-input"
+                  disabled={submittingAction}
                   id="circle-name"
                   onChange={(e) => setCircleNameInput(e.target.value)}
                   placeholder="e.g. Sharma Family Protection Circle"
@@ -593,6 +642,7 @@ export function FamilySafetyPage() {
               <div className="modal-actions" style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button
                   className="button button-secondary"
+                  disabled={submittingAction}
                   onClick={() => setShowCreateModal(false)}
                   type="button"
                 >
@@ -620,6 +670,7 @@ export function FamilySafetyPage() {
               <button
                 aria-label="Close dialog"
                 className="modal-close-btn"
+                disabled={submittingAction}
                 onClick={() => setShowJoinModal(false)}
                 type="button"
               >
@@ -632,6 +683,7 @@ export function FamilySafetyPage() {
                 <input
                   autoFocus
                   className="form-input"
+                  disabled={submittingAction}
                   id="invite-code"
                   onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
                   placeholder="e.g. CS-9X2M4K"
@@ -643,6 +695,7 @@ export function FamilySafetyPage() {
               <div className="modal-actions" style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button
                   className="button button-secondary"
+                  disabled={submittingAction}
                   onClick={() => setShowJoinModal(false)}
                   type="button"
                 >

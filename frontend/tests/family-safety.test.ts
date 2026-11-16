@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   FamilySafetyApiError,
+  isDatabaseMigrationPendingError,
+  sanitizeUserFacingError,
   type FamilyCircleSummary,
   type FamilyCircleAlert,
 } from '../src/family-safety/familySafetyApi.ts'
@@ -71,4 +73,27 @@ test('WhatsApp share URL generates properly encoded invitation link with circle 
   assert.ok(url.includes('Gupta%20Family'))
   assert.ok(url.includes('CS-4455ZZ'))
   assert.ok(url.includes('CyberSaathi%20AI'))
+})
+
+test('isDatabaseMigrationPendingError accurately identifies missing tables and schema cache errors', () => {
+  assert.equal(isDatabaseMigrationPendingError(new Error("Could not find the table 'public.family_circle_members' in the schema cache")), true)
+  assert.equal(isDatabaseMigrationPendingError(new Error('relation "family_circles" does not exist')), true)
+  assert.equal(isDatabaseMigrationPendingError(new FamilySafetyApiError('Pending migration', 503, 'DATABASE_SETUP_PENDING')), true)
+  assert.equal(isDatabaseMigrationPendingError(new Error('Network error')), false)
+  assert.equal(isDatabaseMigrationPendingError(null), false)
+})
+
+test('sanitizeUserFacingError hides raw Postgres/schema internals and presents actionable messages', () => {
+  const res1 = sanitizeUserFacingError(new Error("Could not find the table 'public.family_circle_members' in the schema cache"))
+  assert.equal(res1.isDatabasePending, true)
+  assert.ok(res1.message.includes('migration script must be applied'))
+  assert.ok(!res1.message.includes('schema cache'))
+
+  const res2 = sanitizeUserFacingError(new FamilySafetyApiError('Unauthorized', 401))
+  assert.equal(res2.isDatabasePending, false)
+  assert.ok(res2.message.includes('Authentication required'))
+
+  const res3 = sanitizeUserFacingError(new FamilySafetyApiError('Rate limit exceeded', 429))
+  assert.equal(res3.isDatabasePending, false)
+  assert.ok(res3.message.includes('Too many requests'))
 })

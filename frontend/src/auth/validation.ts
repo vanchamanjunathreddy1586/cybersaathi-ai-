@@ -55,7 +55,22 @@ export function safeAuthErrorMessage(error: unknown): string {
           'message' in error &&
           typeof (error as { message: unknown }).message === 'string'
         ? (error as { message: string }).message.toLowerCase()
-        : ''
+        : typeof error === 'object' &&
+            error !== null &&
+            'msg' in error &&
+            typeof (error as { msg: unknown }).msg === 'string'
+          ? (error as { msg: string }).msg.toLowerCase()
+          : ''
+
+  if (
+    code === 'unsupported_provider' ||
+    message.includes('unsupported provider') ||
+    message.includes('provider is not enabled') ||
+    message.includes('provider not enabled') ||
+    message.includes('oauth provider')
+  ) {
+    return 'Google Sign-In is not currently enabled in the authentication provider settings. Please contact the administrator or sign in with your email and password.'
+  }
 
   if (
     status === 429 ||

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "test": "tsx --test tests/scanner.test.ts tests/email-scanner.test.ts tests/investigation.test.ts tests/auth.test.ts tests/web-push.test.ts tests/rate-limiting.test.ts tests/load-test.test.ts tests/fraud-recovery.test.ts tests/app-scanner.test.ts tests/call-scanner.test.ts tests/safety-score-and-soc.test.ts tests/family-safety.test.ts",
+    "test": "tsx --test tests/scanner.test.ts tests/email-scanner.test.ts tests/investigation.test.ts tests/auth.test.ts tests/web-push.test.ts tests/rate-limiting.test.ts tests/load-test.test.ts tests/fraud-recovery.test.ts tests/app-scanner.test.ts tests/call-scanner.test.ts tests/safety-score-and-soc.test.ts tests/family-safety.test.ts tests/red-team-security.test.ts",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

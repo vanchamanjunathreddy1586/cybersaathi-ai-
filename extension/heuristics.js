@@ -28,17 +28,17 @@ export const LEGITIMATE_INDIAN_DOMAINS = new Set([
 ])
 
 export const SENSITIVE_BRANDS = [
-  { name: 'State Bank of India (SBI)', match: /sbi|onlinesbi/i, legitRoot: /(?:sbi\.co\.in|onlinesbi\.sbi)$/i },
-  { name: 'HDFC Bank', match: /hdfc/i, legitRoot: /hdfcbank\.com$/i },
-  { name: 'ICICI Bank', match: /icici/i, legitRoot: /icicibank\.com$/i },
-  { name: 'Axis Bank', match: /axisbank/i, legitRoot: /axisbank\.com$/i },
-  { name: 'Punjab National Bank (PNB)', match: /pnbindia|pnbbank/i, legitRoot: /pnbindia\.in$/i },
-  { name: 'Paytm', match: /paytm/i, legitRoot: /paytm\.com$/i },
-  { name: 'PhonePe', match: /phonepe/i, legitRoot: /phonepe\.com$/i },
-  { name: 'Income Tax Department (India)', match: /incometax/i, legitRoot: /incometax\.gov\.in$/i },
-  { name: 'Aadhaar / UIDAI', match: /uidai|aadhaar|myaadhaar/i, legitRoot: /uidai\.gov\.in$/i },
-  { name: 'EPFO India', match: /epfindia|epfo/i, legitRoot: /epfindia\.gov\.in$/i },
-  { name: 'India Post', match: /indiapost/i, legitRoot: /indiapost\.gov\.in$/i },
+  { name: 'State Bank of India (SBI)', match: /sbi|onlinesbi/i, legitRoot: /(?:^|\.)(?:sbi\.co\.in|onlinesbi\.sbi)$/i },
+  { name: 'HDFC Bank', match: /hdfc/i, legitRoot: /(?:^|\.)hdfcbank\.com$/i },
+  { name: 'ICICI Bank', match: /icici/i, legitRoot: /(?:^|\.)icicibank\.com$/i },
+  { name: 'Axis Bank', match: /axisbank/i, legitRoot: /(?:^|\.)axisbank\.com$/i },
+  { name: 'Punjab National Bank (PNB)', match: /pnbindia|pnbbank/i, legitRoot: /(?:^|\.)pnbindia\.in$/i },
+  { name: 'Paytm', match: /paytm/i, legitRoot: /(?:^|\.)paytm\.com$/i },
+  { name: 'PhonePe', match: /phonepe/i, legitRoot: /(?:^|\.)phonepe\.com$/i },
+  { name: 'Income Tax Department (India)', match: /incometax/i, legitRoot: /(?:^|\.)incometax\.gov\.in$/i },
+  { name: 'Aadhaar / UIDAI', match: /uidai|aadhaar|myaadhaar/i, legitRoot: /(?:^|\.)uidai\.gov\.in$/i },
+  { name: 'EPFO India', match: /epfindia|epfo/i, legitRoot: /(?:^|\.)epfindia\.gov\.in$/i },
+  { name: 'India Post', match: /indiapost/i, legitRoot: /(?:^|\.)indiapost\.gov\.in$/i },
 ]
 
 export const SUSPICIOUS_TLDS = new Set([

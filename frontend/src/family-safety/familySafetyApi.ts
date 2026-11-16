@@ -56,6 +56,55 @@ export class FamilySafetyApiError extends Error {
   }
 }
 
+export function isDatabaseMigrationPendingError(err: unknown): boolean {
+  if (!err) return false
+  if (err instanceof FamilySafetyApiError && err.code === 'DATABASE_SETUP_PENDING') return true
+  const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase()
+  return (
+    msg.includes('schema cache') ||
+    msg.includes('does not exist') ||
+    msg.includes('database_setup_pending') ||
+    msg.includes('family_circle_members') ||
+    msg.includes('family_circles')
+  )
+}
+
+export function sanitizeUserFacingError(
+  err: unknown,
+  defaultMessage = 'An error occurred.',
+): { message: string; isDatabasePending: boolean } {
+  if (isDatabaseMigrationPendingError(err)) {
+    return {
+      message: 'Family Safety database tables are not yet initialized in Supabase. The database migration script must be applied.',
+      isDatabasePending: true,
+    }
+  }
+
+  if (err instanceof FamilySafetyApiError) {
+    if (err.status === 401) {
+      return { message: 'Authentication required. Please sign in again.', isDatabasePending: false }
+    }
+    if (err.status === 404) {
+      return { message: 'Family safety circle not found or access denied.', isDatabasePending: false }
+    }
+    if (err.status === 429) {
+      return { message: 'Too many requests. Please wait a moment and try again.', isDatabasePending: false }
+    }
+    if (err.message) {
+      return { message: err.message, isDatabasePending: false }
+    }
+  }
+
+  if (err instanceof Error) {
+    if (err.name === 'AbortError') {
+      return { message: 'Request timed out. Please check your internet connection.', isDatabasePending: false }
+    }
+    return { message: err.message, isDatabasePending: false }
+  }
+
+  return { message: defaultMessage, isDatabasePending: false }
+}
+
 /**
  * Fetch all family circles the authenticated user belongs to.
  */
@@ -74,8 +123,8 @@ export async function fetchUserCircles(accessToken: string): Promise<FamilyCircl
     })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { message?: string }
-      throw new FamilySafetyApiError(err.message || 'Failed to fetch family circles.', res.status)
+      const err = await res.json().catch(() => ({})) as { message?: string; code?: string }
+      throw new FamilySafetyApiError(err.message || 'Failed to fetch family circles.', res.status, err.code)
     }
 
     const payload = (await res.json()) as { success: boolean; data: FamilyCircleSummary[] }
@@ -103,9 +152,9 @@ export async function createFamilyCircle(
     credentials: 'omit',
   })
 
-  const json = await res.json().catch(() => ({})) as { success: boolean; data?: { id: string; name: string; invite_code: string }; message?: string }
+  const json = await res.json().catch(() => ({})) as { success: boolean; data?: { id: string; name: string; invite_code: string }; message?: string; code?: string }
   if (!res.ok || !json.success) {
-    throw new FamilySafetyApiError(json.message || 'Failed to create family circle.', res.status)
+    throw new FamilySafetyApiError(json.message || 'Failed to create family circle.', res.status, json.code)
   }
 
   return json.data!
@@ -118,7 +167,7 @@ export async function joinFamilyCircle(
   accessToken: string,
   inviteCode: string,
   displayName?: string,
-): Promise<{ circle: { id: string; name: string; invite_code: string }; member: FamilyCircleMember }> {
+): Promise<{ circle: { id: string; name: string; created_at?: string; invite_code?: string }; member: FamilyCircleMember }> {
   const res = await fetch(`${API_BASE_URL}/api/family-safety/join`, {
     method: 'POST',
     headers: {
@@ -131,11 +180,12 @@ export async function joinFamilyCircle(
 
   const json = await res.json().catch(() => ({})) as {
     success: boolean
-    data?: { circle: { id: string; name: string; invite_code: string }; member: FamilyCircleMember }
+    data?: { circle: { id: string; name: string; created_at?: string; invite_code?: string }; member: FamilyCircleMember }
     message?: string
+    code?: string
   }
   if (!res.ok || !json.success) {
-    throw new FamilySafetyApiError(json.message || 'Failed to join family circle.', res.status)
+    throw new FamilySafetyApiError(json.message || 'Failed to join family circle.', res.status, json.code)
   }
 
   return json.data!
@@ -159,8 +209,8 @@ export async function fetchCircleDetails(accessToken: string, circleId: string):
     })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { message?: string }
-      throw new FamilySafetyApiError(err.message || 'Failed to load circle details.', res.status)
+      const err = await res.json().catch(() => ({})) as { message?: string; code?: string }
+      throw new FamilySafetyApiError(err.message || 'Failed to load circle details.', res.status, err.code)
     }
 
     const payload = (await res.json()) as { success: boolean; data: CircleDetails }
@@ -197,9 +247,10 @@ export async function broadcastCircleAlert(
     success: boolean
     data?: FamilyCircleAlert
     message?: string
+    code?: string
   }
   if (!res.ok || !json.success) {
-    throw new FamilySafetyApiError(json.message || 'Failed to broadcast threat alert.', res.status)
+    throw new FamilySafetyApiError(json.message || 'Failed to broadcast threat alert.', res.status, json.code)
   }
 
   return json.data!
@@ -218,7 +269,7 @@ export async function leaveFamilyCircle(accessToken: string, circleId: string): 
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { message?: string }
-    throw new FamilySafetyApiError(err.message || 'Failed to leave family circle.', res.status)
+    const err = await res.json().catch(() => ({})) as { message?: string; code?: string }
+    throw new FamilySafetyApiError(err.message || 'Failed to leave family circle.', res.status, err.code)
   }
 }

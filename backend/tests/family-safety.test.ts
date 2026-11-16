@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Server } from 'node:http';
 import { createApp } from '../src/app.js';
-import { generateInviteCode } from '../src/services/family-safety/family-safety.service.js';
+import {
+  generateInviteCode,
+  isMissingTableError,
+  DatabaseMigrationPendingError,
+} from '../src/services/family-safety/family-safety.service.js';
 
 test('generateInviteCode creates formatted 9-char uppercase pairing tokens', () => {
   const code = generateInviteCode();
@@ -13,6 +17,30 @@ test('generateInviteCode creates formatted 9-char uppercase pairing tokens', () 
   // Ensure randomness across multiple generations
   const code2 = generateInviteCode();
   assert.notEqual(code, code2, 'Subsequent invite codes must be unique');
+});
+
+test('isMissingTableError accurately detects uninitialized database schema errors', () => {
+  // Schema cache error
+  assert.equal(
+    isMissingTableError(new Error("Could not find the table 'public.family_circle_members' in the schema cache")),
+    true,
+  );
+  // PostgREST 205
+  assert.equal(isMissingTableError({ code: 'PGRST205', message: 'Table not found' }), true);
+  // Postgres 42P01
+  assert.equal(isMissingTableError({ code: '42P01', message: 'relation does not exist' }), true);
+  // Relation does not exist text
+  assert.equal(isMissingTableError(new Error('relation "family_circles" does not exist')), true);
+  // Unrelated error returns false
+  assert.equal(isMissingTableError(new Error('Invalid credentials')), false);
+  assert.equal(isMissingTableError(null), false);
+  assert.equal(isMissingTableError(undefined), false);
+});
+
+test('DatabaseMigrationPendingError carries DATABASE_SETUP_PENDING code', () => {
+  const err = new DatabaseMigrationPendingError();
+  assert.equal(err.code, 'DATABASE_SETUP_PENDING');
+  assert.match(err.message, /not yet initialized/);
 });
 
 test('Family safety HTTP endpoints enforce authentication', async () => {

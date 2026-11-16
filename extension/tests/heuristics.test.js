@@ -30,6 +30,9 @@ test('detects deceptive Indian bank brand spoofing on rogue domains', () => {
     'https://sbi-instant-loan.click/apply.html',
     'http://incometax-refund-verification.work/login',
     'https://myaadhaar-update.online/aadhaar-pan-link',
+    'https://attacksbi.co.in/login',
+    'https://fakehdfcbank.com/netbanking',
+    'https://evilicicibank.com/auth',
   ]
 
   for (const url of spoofedUrls) {

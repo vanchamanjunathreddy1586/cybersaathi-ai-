@@ -56,52 +56,62 @@ AS $$
 $$;
 
 -- RLS Policies for family_circles
+DROP POLICY IF EXISTS "Users can view family circles they belong to" ON public.family_circles;
 CREATE POLICY "Users can view family circles they belong to"
     ON public.family_circles
     FOR SELECT
-    USING (owner_user_id = auth.uid() OR public.is_circle_member(id));
+    USING (owner_user_id = (SELECT auth.uid()) OR public.is_circle_member(id));
 
+DROP POLICY IF EXISTS "Authenticated users can create family circles" ON public.family_circles;
 CREATE POLICY "Authenticated users can create family circles"
     ON public.family_circles
     FOR INSERT
-    WITH CHECK (auth.uid() = owner_user_id);
+    WITH CHECK ((SELECT auth.uid()) = owner_user_id);
 
+DROP POLICY IF EXISTS "Owners can update their family circles" ON public.family_circles;
 CREATE POLICY "Owners can update their family circles"
     ON public.family_circles
     FOR UPDATE
-    USING (owner_user_id = auth.uid());
+    USING (owner_user_id = (SELECT auth.uid()));
 
+DROP POLICY IF EXISTS "Owners can delete their family circles" ON public.family_circles;
 CREATE POLICY "Owners can delete their family circles"
     ON public.family_circles
     FOR DELETE
-    USING (owner_user_id = auth.uid());
+    USING (owner_user_id = (SELECT auth.uid()));
 
 -- RLS Policies for family_circle_members
+DROP POLICY IF EXISTS "Members can view other members in their circle" ON public.family_circle_members;
 CREATE POLICY "Members can view other members in their circle"
     ON public.family_circle_members
     FOR SELECT
-    USING (public.is_circle_member(circle_id));
+    USING (user_id = (SELECT auth.uid()) OR public.is_circle_member(circle_id));
 
+DROP POLICY IF EXISTS "Users can join circles with valid member row" ON public.family_circle_members;
 CREATE POLICY "Users can join circles with valid member row"
     ON public.family_circle_members
     FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "Users can leave circles or owners remove members" ON public.family_circle_members;
 CREATE POLICY "Users can leave circles or owners remove members"
     ON public.family_circle_members
     FOR DELETE
-    USING (auth.uid() = user_id OR EXISTS (
+    USING ((SELECT auth.uid()) = user_id OR EXISTS (
       SELECT 1 FROM public.family_circles
-      WHERE id = circle_id AND owner_user_id = auth.uid()
+      WHERE id = circle_id AND owner_user_id = (SELECT auth.uid())
     ));
 
 -- RLS Policies for family_circle_alerts
+DROP POLICY IF EXISTS "Circle members can view shared threat alerts" ON public.family_circle_alerts;
 CREATE POLICY "Circle members can view shared threat alerts"
     ON public.family_circle_alerts
     FOR SELECT
     USING (public.is_circle_member(circle_id));
 
+DROP POLICY IF EXISTS "Circle members can broadcast critical threat alerts" ON public.family_circle_alerts;
 CREATE POLICY "Circle members can broadcast critical threat alerts"
     ON public.family_circle_alerts
     FOR INSERT
-    WITH CHECK (auth.uid() = triggered_by_user_id AND public.is_circle_member(circle_id));
+    WITH CHECK ((SELECT auth.uid()) = triggered_by_user_id AND public.is_circle_member(circle_id));
+

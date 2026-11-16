@@ -58,7 +58,7 @@ async function optionalAuth(req: Request, res: Response, next: NextFunction) {
 const transcriptSchema = z.object({
   transcript: z.string().trim().min(5, 'Transcript must contain at least 5 characters.').max(100_000, 'Transcript is too long.'),
   languageHint: z.enum(['en', 'hi', 'te', 'mixed']).optional(),
-});
+}).strict();
 
 /**
  * POST /api/call-scanner/analyze-transcript

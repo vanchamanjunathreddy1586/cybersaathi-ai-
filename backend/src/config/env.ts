@@ -7,6 +7,7 @@ dotenv.config({ path: backendEnvPath });
 
 const environmentSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  HOST: z.string().trim().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   FRONTEND_URL: z.string().url(),
   ALLOWED_ORIGINS: z
@@ -173,6 +174,7 @@ const localDevelopmentOrigins = (() => {
 
 export const env = {
   port: parsedEnvironment.data.PORT,
+  host: parsedEnvironment.data.HOST,
   nodeEnv: parsedEnvironment.data.NODE_ENV,
   frontendUrl: parsedEnvironment.data.FRONTEND_URL,
   allowedOrigins: [

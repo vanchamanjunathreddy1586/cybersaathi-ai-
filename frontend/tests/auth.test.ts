@@ -113,6 +113,26 @@ test('safeAuthErrorMessage preserves diagnostic error messages for missing env v
   assert.equal(safeAuthErrorMessage(err), 'VITE_SUPABASE_URL is not configured.')
 })
 
+test('safeAuthErrorMessage maps disabled or unconfigured OAuth provider to user-friendly message', () => {
+  const err1 = new Error('Unsupported provider: provider is not enabled')
+  assert.equal(
+    safeAuthErrorMessage(err1),
+    'Google Sign-In is not currently enabled in the authentication provider settings. Please contact the administrator or sign in with your email and password.',
+  )
+
+  const err2 = { code: 400, error_code: 'validation_failed', msg: 'Unsupported provider: provider is not enabled' }
+  assert.equal(
+    safeAuthErrorMessage(err2),
+    'Google Sign-In is not currently enabled in the authentication provider settings. Please contact the administrator or sign in with your email and password.',
+  )
+
+  const err3 = { code: 'unsupported_provider', message: 'Provider disabled' }
+  assert.equal(
+    safeAuthErrorMessage(err3),
+    'Google Sign-In is not currently enabled in the authentication provider settings. Please contact the administrator or sign in with your email and password.',
+  )
+})
+
 test('safeAuthErrorMessage keeps unknown errors generic and never leaks raw internals', () => {
   const err = new Error('FATAL: connection to server on port 5432 failed: password auth failed for user "postgres"')
   assert.equal(

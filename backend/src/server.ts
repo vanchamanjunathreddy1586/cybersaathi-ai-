@@ -13,8 +13,9 @@ server.on('error', (error: NodeJS.ErrnoException) => {
   process.exitCode = 1;
 });
 
-server.listen(env.port, () => {
+server.listen(env.port, env.host, () => {
   logger.info('CyberSaathi AI backend started', {
+    host: env.host,
     port: env.port,
     environment: env.nodeEnv,
   });

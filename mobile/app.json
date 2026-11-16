@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "CyberSaathi AI",
+    "slug": "cybersaathi-ai",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "scheme": "cybersaathi",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1120"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cybersaathi.ai",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CyberSaathi needs camera access to scan suspicious QR codes for scam detection.",
+        "NSMicrophoneUsageDescription": "CyberSaathi needs microphone access for multilingual voice assistance.",
+        "NSFaceIDUsageDescription": "CyberSaathi uses Face ID to securely protect your incident cases and evidence."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1120"
+      },
+      "package": "com.cybersaathi.ai",
+      "allowBackup": false,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-camera",
+      "expo-local-authentication",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "CyberSaathi needs microphone access for multilingual voice assistance."
+        }
+      ],
+      "expo-image-picker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

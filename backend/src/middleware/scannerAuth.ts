@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express';
+import { env } from '../config/env.js';
 import { SupabaseConfigurationError } from '../config/supabase.js';
 import { verifyAccessToken } from '../services/scanner/scanner.repository.js';
 import { logger } from '../utils/logger.js';
@@ -8,7 +9,33 @@ export interface ScannerAuthContext {
   userId: string;
 }
 
+export const isTestEnvironment = (): boolean => {
+  if (process.env.NODE_ENV === 'production' || env.nodeEnv === 'production') {
+    return false;
+  }
+  return (
+    process.env.NODE_ENV === 'test' ||
+    env.nodeEnv === 'test' ||
+    process.argv.some((arg) => arg.includes('test'))
+  );
+};
+
 export const scannerAuth: RequestHandler = async (request, response, next) => {
+  // Allow test fixtures to supply mock auth context ONLY strictly in test environments
+  if (
+    isTestEnvironment() &&
+    response.locals.scannerAuth &&
+    typeof response.locals.scannerAuth === 'object' &&
+    'userId' in response.locals.scannerAuth &&
+    'accessToken' in response.locals.scannerAuth
+  ) {
+    next();
+    return;
+  }
+
+  // In non-test environments (production, staging, development), explicitly wipe any pre-existing locals to prevent spoofing
+  response.locals.scannerAuth = undefined;
+
   const authorization = request.header('authorization') ?? '';
   const match = /^Bearer\s+([^\s]+)$/i.exec(authorization);
   const accessToken = match?.[1];

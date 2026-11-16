@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: cybersaathi-api
+    env: node
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: FRONTEND_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXCONN_CALLS_ENABLED
+        value: "false"

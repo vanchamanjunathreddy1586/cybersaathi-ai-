@@ -327,3 +327,33 @@ export const callScannerReadLimiter = createEndpointLimiter({
   message: 'Call scan history request limit reached. Try again later.',
   code: 'CALL_SCAN_READ_LIMIT_EXCEEDED',
 });
+
+/**
+ * Family safety join limiter: Prevents brute-forcing circle invite codes.
+ */
+export const familySafetyJoinLimiter = createEndpointLimiter({
+  windowMs: 60_000,
+  limit: 10,
+  message: 'Too many family circle join attempts. Please try again in a minute.',
+  code: 'JOIN_RATE_LIMIT_EXCEEDED',
+});
+
+/**
+ * Family safety alert limiter: Prevents emergency broadcast alert flooding.
+ */
+export const familySafetyAlertLimiter = createEndpointLimiter({
+  windowMs: 60_000,
+  limit: 6,
+  message: 'Alert broadcast limit reached. You can broadcast up to 6 emergency alerts per minute.',
+  code: 'ALERT_BROADCAST_LIMIT_EXCEEDED',
+});
+
+/**
+ * Family safety read limiter: Generous read limit for viewing circles and members.
+ */
+export const familySafetyReadLimiter = createEndpointLimiter({
+  windowMs: 15 * 60_000,
+  limit: 180,
+  message: 'Family circle request limit reached. Try again later.',
+  code: 'FAMILY_SAFETY_READ_LIMIT_EXCEEDED',
+});

@@ -103,7 +103,10 @@ async function fetchJson<T>(
         throw error;
       }
 
-      throw new ApiRequestError('The API could not be reached', 'network');
+      const networkMessage = API_BASE_URL
+        ? 'The API could not be reached'
+        : 'The backend API is not configured or reachable. Set VITE_API_BASE_URL in your deployment environment.';
+      throw new ApiRequestError(networkMessage, 'network');
     }
 
     if (!response.ok) {
