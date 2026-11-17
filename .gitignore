@@ -33,3 +33,6 @@ web-build/
 mobile.backup*/
 .vercel
 /supabase/
+
+# Local Netlify folder
+.netlify

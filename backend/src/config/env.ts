@@ -181,6 +181,7 @@ export const env = {
     ...new Set([
       parsedEnvironment.data.FRONTEND_URL,
       ...parsedEnvironment.data.ALLOWED_ORIGINS,
+      'https://cybersaathiai.netlify.app',
       ...localDevelopmentOrigins,
     ]),
   ],

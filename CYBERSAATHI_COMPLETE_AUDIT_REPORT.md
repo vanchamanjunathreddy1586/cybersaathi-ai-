@@ -4,7 +4,7 @@
 **Auditor:** Antigravity Senior DevOps & Full-Stack Reliability Engineering Team  
 **Repository:** `https://github.com/vanchamanjunathreddy1586/cybersaathi-ai-.git`  
 **Production Git Target:** `origin/main` (commit: `139542d`)  
-**Production Frontend URL:** `https://cybersaathi-ai-sigma.vercel.app`  
+**Production Frontend URL:** `https://cybersaathiai.netlify.app`  
 **Production Backend URL:** `https://cybersaathi-api.onrender.com`  
 **Production Supabase URL:** `https://jksiqoaonnfysqkhavgf.supabase.co`  
 
@@ -13,7 +13,7 @@
 ## 1. Executive Summary
 
 A comprehensive architectural and code-level audit was conducted across all tiers of **CyberSaathi AI**:
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS (Vercel deployment)
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS (Netlify deployment)
 - **Backend:** Node.js, Express, TypeScript, Supabase Admin / RLS client (Render deployment)
 - **Mobile:** React Native, Expo SDK, TypeScript, Jest
 - **Database / Auth / Storage:** Supabase PostgreSQL with strict Row Level Security (RLS)
@@ -23,13 +23,13 @@ All safe code-level fixes, direct Supabase fallbacks, and deterministic heuristi
 ```mermaid
 graph TD
     User["Web & Mobile Users"]
-    Vercel["Frontend (Vercel Production)<br/>https://cybersaathi-ai-sigma.vercel.app"]
+    Netlify["Frontend (Netlify Production)<br/>https://cybersaathiai.netlify.app"]
     Supabase["Supabase Cloud (PostgreSQL 15)<br/>- 21 RLS Tables<br/>- 16 Security Definer RPCs<br/>- Storage Evidence Bucket"]
     Render["Render Web Service<br/>https://cybersaathi-api.onrender.com"]
 
-    User -->|HTTPS| Vercel
-    Vercel -->|Direct Authenticated RLS & RPCs| Supabase
-    Vercel -.->|REST Fallback| Render
+    User -->|HTTPS| Netlify
+    Netlify -->|Direct Authenticated RLS & RPCs| Supabase
+    Netlify -.->|REST Fallback| Render
     Render -->|Admin Service Role| Supabase
 ```
 
