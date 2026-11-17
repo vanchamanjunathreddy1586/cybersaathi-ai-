@@ -1,6 +1,6 @@
 import { API_BASE_URL } from './apiBaseUrl.ts';
 import { supabase, supabaseConfigurationError } from '../auth/supabase.ts';
-const REQUEST_TIMEOUT_MS = 8_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 
 export interface HealthResponse {
   success: true;
@@ -98,7 +98,10 @@ async function fetchJson<T>(
       });
     } catch (error) {
       if (timedOut) {
-        throw new ApiRequestError('The API request timed out', 'timeout');
+        throw new ApiRequestError(
+          'The backend API request timed out. Free cloud services may take up to 30 seconds to wake from sleep; click Retry checks to reconnect.',
+          'timeout',
+        );
       }
 
       if (controller.signal.aborted) {
@@ -142,7 +145,10 @@ async function fetchJson<T>(
       body = await response.json();
     } catch (error) {
       if (timedOut) {
-        throw new ApiRequestError('The API request timed out', 'timeout');
+        throw new ApiRequestError(
+          'The backend API request timed out. Free cloud services may take up to 30 seconds to wake from sleep; click Retry checks to reconnect.',
+          'timeout',
+        );
       }
 
       if (controller.signal.aborted) {
