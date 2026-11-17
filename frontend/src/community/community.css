@@ -102,6 +102,14 @@
   color: #e7a9b0;
 }
 
+.community-retry-button {
+  margin-left: auto;
+  align-self: center;
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
 .community-connection {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 0.75fr);

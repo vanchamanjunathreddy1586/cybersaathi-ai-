@@ -16,12 +16,24 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: FRONTEND_URL
-        sync: false
+        value: https://cybersaathiai.netlify.app
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: https://cybersaathiai.netlify.app,http://localhost:5173,http://localhost:3000
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
+      - key: AI_API_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: AI_MODEL
+        value: gemini-3-flash-preview
+      - key: AI_API_KEY
+        sync: false
+      - key: NEXCONN_APP_KEY
+        sync: false
+      - key: NEXCONN_APP_SECRET
+        sync: false
+      - key: NEXCONN_API_REGION
+        value: sg
       - key: NEXCONN_CALLS_ENABLED
         value: "false"

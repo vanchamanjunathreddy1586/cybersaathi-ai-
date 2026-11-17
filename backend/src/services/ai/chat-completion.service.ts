@@ -52,7 +52,7 @@ export async function requestAiChatCompletion(
 
   try {
     return await geminiCircuitBreaker.execute(async () => {
-      const response = await fetch(endpoint, {
+      let response = await fetch(endpoint, {
         method: 'POST',
         redirect: 'error',
         signal: controller.signal,
@@ -66,6 +66,24 @@ export async function requestAiChatCompletion(
           messages,
         }),
       });
+
+      if (response.status === 429 && !controller.signal.aborted) {
+        await new Promise((resolve) => setTimeout(resolve, 1_200));
+        response = await fetch(endpoint, {
+          method: 'POST',
+          redirect: 'error',
+          signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${env.aiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: env.aiModel,
+            ...(options.jsonResponse ? { response_format: { type: 'json_object' } } : {}),
+            messages,
+          }),
+        });
+      }
 
       if (!response.ok) return { status: 'unavailable', reason: 'provider_error' };
 

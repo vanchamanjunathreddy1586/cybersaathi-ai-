@@ -330,10 +330,9 @@ export default function AssistantPage() {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const content = draft.trim()
-    if (!accessToken || !selectedId || !content || sending) return
+  async function submitQuestion(questionText: string) {
+    const content = questionText.trim()
+    if (!accessToken || !content || sending) return
     if (!navigator.onLine) {
       setError('CyberSaathi Assistant needs an internet connection. Your message has not been sent.')
       return
@@ -346,11 +345,27 @@ export default function AssistantPage() {
     const submittedContent = mode === 'incident'
       ? `Incident response. Money lost: ${incidentMoneyLost}. User report: ${content}`
       : content
+
     setSending(true)
     setPendingQuestion(submittedContent)
     setError(null)
+    setDraft('')
+
     try {
-      const result = await sendAssistantMessage(accessToken, selectedId, {
+      let targetId = selectedId
+      if (!targetId) {
+        setCreating(true)
+        try {
+          const newConv = await createAssistantConversation(accessToken, language)
+          targetId = newConv.id
+          setSelectedId(targetId)
+          setConversations((items) => [newConv, ...items.filter((item) => item.id !== newConv.id)])
+        } finally {
+          setCreating(false)
+        }
+      }
+
+      const result = await sendAssistantMessage(accessToken, targetId, {
         content: submittedContent,
         language,
         mode,
@@ -361,13 +376,12 @@ export default function AssistantPage() {
         },
       })
       setMessages((items) => [...items, ...result.messages])
-      setDraft('')
       try {
         const refreshed = await refreshConversations()
-        const current = refreshed.find((item) => item.id === selectedId)
+        const current = refreshed.find((item) => item.id === targetId)
         if (current) setLanguage(current.language)
       } catch {
-        setError('Your AI response was received and saved, but the conversation list could not be refreshed.')
+        // Conversation refreshed softly
       }
     } catch (sendError) {
       setError(apiErrorMessage(sendError))
@@ -375,6 +389,12 @@ export default function AssistantPage() {
       setPendingQuestion(null)
       setSending(false)
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!draft.trim() || sending) return
+    await submitQuestion(draft)
   }
 
   function startVoiceInput() {
@@ -654,12 +674,17 @@ export default function AssistantPage() {
                 <p>Ask about a suspicious message, safer account settings, a scan result, or a lesson. I’ll explain what is known and what remains uncertain.</p>
                 <div className="assistant-suggestions">
                   {suggestions[language].map((suggestion) => (
-                    <button key={suggestion} type="button" onClick={() => setDraft(suggestion)}>
+                    <button
+                      key={suggestion}
+                      type="button"
+                      disabled={sending}
+                      onClick={() => void submitQuestion(suggestion)}
+                    >
                       {suggestion}
                     </button>
                   ))}
                 </div>
-                <button className="assistant-primary-button" type="button" onClick={() => void handleNewConversation()} disabled={creating}>
+                <button className="assistant-primary-button" type="button" onClick={() => void handleNewConversation()} disabled={creating || sending}>
                   <Plus size={16} aria-hidden="true" />
                   Start a conversation
                 </button>
@@ -672,7 +697,12 @@ export default function AssistantPage() {
                 <p>Start with a question. Your first message becomes this conversation’s title.</p>
                 <div className="assistant-suggestions">
                   {suggestions[language].map((suggestion) => (
-                    <button key={suggestion} type="button" onClick={() => setDraft(suggestion)}>
+                    <button
+                      key={suggestion}
+                      type="button"
+                      disabled={sending}
+                      onClick={() => void submitQuestion(suggestion)}
+                    >
                       {suggestion}
                     </button>
                   ))}
@@ -782,14 +812,22 @@ export default function AssistantPage() {
               id="assistant-message-input"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault()
+                  if (!sending && draft.trim()) {
+                    void submitQuestion(draft)
+                  }
+                }
+              }}
               placeholder={language === 'te'
-                ? 'మీ సైబర్ భద్రత ప్రశ్నను అడగండి…'
+                ? 'మీ సైబర్ భద్రత ప్రశ్నను అడగండి… (Enter నొక్కి పంపండి, Shift+Enter కొత్త లైన్)'
                 : language === 'hi'
-                  ? 'अपना साइबर सुरक्षा प्रश्न पूछें…'
-                  : 'Ask a cybersecurity question…'}
+                  ? 'अपना साइबर सुरक्षा प्रश्न पूछें… (भेजने के लिए Enter दबाएं, नई लाइन के लिए Shift+Enter)'
+                  : 'Ask a cybersecurity question… (Press Enter to send, Shift+Enter for new line)'}
               maxLength={4_000}
               rows={2}
-              disabled={!selectedId || sending || loadingConversation}
+              disabled={sending || loadingConversation}
             />
             <div className="assistant-composer-footer">
               <div>
@@ -797,7 +835,7 @@ export default function AssistantPage() {
                   className={listening ? 'assistant-voice-button listening' : 'assistant-voice-button'}
                   type="button"
                   onClick={startVoiceInput}
-                  disabled={!selectedId || sending}
+                  disabled={sending}
                   aria-pressed={listening}
                 >
                   <Mic size={16} aria-hidden="true" />
@@ -805,7 +843,7 @@ export default function AssistantPage() {
                 </button>
                 <span className="assistant-character-count">{draft.length}/4000</span>
               </div>
-              <button className="assistant-send-button" type="submit" disabled={!selectedId || sending || !draft.trim()}>
+              <button className="assistant-send-button" type="submit" disabled={sending || !draft.trim()}>
                 {sending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} aria-hidden="true" />}
                 Send
               </button>

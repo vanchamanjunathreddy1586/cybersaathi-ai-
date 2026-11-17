@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types tests/auth.test.ts tests/duplicate-signup.test.ts tests/google-oauth.test.ts tests/system-status.test.ts tests/fraud-recovery.test.ts tests/app-scanner.test.ts tests/call-scanner.test.ts tests/family-safety.test.ts",
+    "test": "node --test --experimental-strip-types tests/auth.test.ts tests/duplicate-signup.test.ts tests/google-oauth.test.ts tests/system-status.test.ts tests/fraud-recovery.test.ts tests/app-scanner.test.ts tests/call-scanner.test.ts tests/family-safety.test.ts tests/assistant.test.ts tests/nexconn.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

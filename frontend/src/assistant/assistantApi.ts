@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../services/apiBaseUrl'
-import { getAuthenticatedSupabaseClient } from '../auth/supabase'
+import { API_BASE_URL } from '../services/apiBaseUrl.ts'
+import { getAuthenticatedSupabaseClient } from '../auth/supabase.ts'
 
 export type AssistantLanguage = 'en' | 'te' | 'hi'
 export type AssistantMode = 'chat' | 'scan' | 'learning' | 'incident'
@@ -163,7 +163,7 @@ async function request(
   body?: unknown,
 ): Promise<Record<string, unknown>> {
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 35_000)
+  const timeout = window.setTimeout(() => controller.abort(), 50_000)
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}/api/assistant${path}`, {
@@ -179,7 +179,7 @@ async function request(
     })
   } catch {
     if (controller.signal.aborted) {
-      throw new AssistantApiError('The request timed out. Check your connection and try again.')
+      throw new AssistantApiError('The assistant request timed out while generating a response. Please retry.')
     }
     throw new AssistantApiError('The assistant API could not be reached. Check your connection and try again.')
   } finally {
@@ -195,12 +195,13 @@ async function request(
     throw new AssistantApiError('The assistant service returned invalid data.', response.status)
   }
   if (!response.ok || payload.success !== true) {
-    throw new AssistantApiError(
-      typeof payload.message === 'string'
-        ? payload.message
-        : `The assistant request failed (${response.status}).`,
-      response.status,
-    )
+    let message = typeof payload.message === 'string'
+      ? payload.message
+      : `The assistant request failed (${response.status}).`
+    if (response.status === 404 || payload.detail === 'Not Found') {
+      message = 'The backend API returned 404. Ensure the Render backend deployment is active.'
+    }
+    throw new AssistantApiError(message, response.status)
   }
   return payload
 }
@@ -355,81 +356,22 @@ export async function sendAssistantMessage(
     context: { scanId?: string; investigationId?: string; lessonId?: string }
   },
 ): Promise<{ messages: AssistantMessage[]; contextUsed: Array<'scan' | 'investigation' | 'academy'> }> {
-  try {
-    const payload = await request(
-      `/conversations/${encodeURIComponent(conversationId)}/messages`,
-      accessToken,
-      'POST',
-      input,
-    )
-    if (
-      !Array.isArray(payload.messages) ||
-      !Array.isArray(payload.contextUsed) ||
-      !payload.contextUsed.every(isContextSource)
-    ) {
-      throw new AssistantApiError('The assistant returned invalid message data.')
-    }
-    return {
-      messages: payload.messages.map(parseMessage),
-      contextUsed: payload.contextUsed,
-    }
-  } catch {
-    try {
-      const client = getAuthenticatedSupabaseClient(accessToken)
-      const { data: userData } = await client.auth.getUser()
-      if (userData?.user?.id) {
-        const { data: userMsg } = await client
-          .from('assistant_messages')
-          .insert({
-            conversation_id: conversationId,
-            user_id: userData.user.id,
-            role: 'user',
-            content: input.content,
-            language: input.language,
-            context_used: [],
-          })
-          .select('*')
-          .single()
-
-        let replyText = ''
-        const isHindi = input.language === 'hi'
-        const isTelugu = input.language === 'te'
-
-        if (isHindi) {
-          replyText = `नमस्ते। साइबरसाथी सुरक्षा केंद्र में आपका स्वागत है।\n\nयदि आपके साथ कोई वित्तीय या डिजिटल धोखाधड़ी हुई है, तो तुरंत **1930** राष्ट्रीय साइबर हेल्पलाइन पर कॉल करें या [cybercrime.gov.in](https://cybercrime.gov.in) पर शिकायत दर्ज करें।\n\n- अपने बैंक को सूचित करके डेबIT कार्ड / नेट बैंकिंग तुरंत ब्लॉक करवाएं।\n- किसी भी व्यक्ति के साथ OTP, PIN, या पासवर्ड साझा न करें।\n- सभी संदेशों, स्क्रीनशॉट्स और UPI लेन-देन आईडी का रिकॉर्ड सुरक्षित रखें।`
-        } else if (isTelugu) {
-          replyText = `నమస్కారం! సైబర్ సాథీ ఏఐ రక్షణ కేంద్రానికి స్వాగతం.\n\nమీకు ఏదైనా సైబర్ మోసం లేదా అనుమానాస్పద లావాదేవీ జరిగితే, వెంటనే జాతీయ సైబర్ హెల్ప్‌లైన్ **1930** కు కాల్ చేయండి లేదా [cybercrime.gov.in](https://cybercrime.gov.in) లో ఫిర్యాదు నమోదు చేయండి.\n\n- వెంటనే మీ బ్యాంకును సంప్రదించి ఖాతా లేదా కార్డును తాత్కాలికంగా నిలిపివేయండి.\n- ఎవరితోనూ మీ OTP, PIN లేదా పాస్‌వర్డ్ పంచుకోవద్దు.\n- మోసానికి సంబంధించిన అన్ని స్క్రీన్‌షాట్లు మరియు లావాదేవీ రికార్డులను భద్రపరచండి.`
-        } else {
-          replyText = `Hello. I am CyberSaathi AI, your cybersecurity and digital safety advisor.\n\nIf you have experienced unauthorized financial transactions or cyber extortion:\n1. **Call 1930 immediately**: The Citizen Financial Cyber Fraud Reporting System operates 24/7 across India.\n2. **Freeze compromised accounts**: Contact your bank's emergency helpline immediately.\n3. **Preserve evidence**: Save all SMS records, transaction IDs, phone numbers, and URLs without modification.\n4. **Report officially**: File an e-complaint on the National Cyber Crime Reporting Portal at [cybercrime.gov.in](https://cybercrime.gov.in).\n\nNever disclose one-time passwords (OTPs), PINs, or confidential banking passwords.`
-        }
-
-        const { data: assistantMsg } = await client
-          .from('assistant_messages')
-          .insert({
-            conversation_id: conversationId,
-            user_id: userData.user.id,
-            role: 'assistant',
-            content: replyText,
-            language: input.language,
-            context_used: [],
-          })
-          .select('*')
-          .single()
-
-        await client
-          .from('assistant_conversations')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', conversationId)
-
-        return {
-          messages: [userMsg, assistantMsg].filter(Boolean).map(parseMessage),
-          contextUsed: [],
-        }
-      }
-    } catch {
-      // Ignore
-    }
-    throw new AssistantApiError('Could not send message.')
+  const payload = await request(
+    `/conversations/${encodeURIComponent(conversationId)}/messages`,
+    accessToken,
+    'POST',
+    input,
+  )
+  if (
+    !Array.isArray(payload.messages) ||
+    !Array.isArray(payload.contextUsed) ||
+    !payload.contextUsed.every(isContextSource)
+  ) {
+    throw new AssistantApiError('The assistant returned invalid message data.')
+  }
+  return {
+    messages: payload.messages.map(parseMessage),
+    contextUsed: payload.contextUsed,
   }
 }
 

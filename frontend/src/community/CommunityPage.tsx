@@ -47,6 +47,7 @@ export function CommunityPage() {
   const [callNotice, setCallNotice] = useState<NexconnCallNotice | null>(null)
   const [callBusy, setCallBusy] = useState(false)
   const [callError, setCallError] = useState('')
+  const [retryIndex, setRetryIndex] = useState(0)
   const hostRef = useRef<HTMLDivElement>(null)
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -55,32 +56,43 @@ export function CommunityPage() {
 
   useEffect(() => {
     if (!accessToken) return
-    let active = true
-    let unmountChat: (() => void) | null = null
-    void requestNexconnSession(accessToken)
-      .then(async (configuration) => {
-        if (!active) return
-        setConnecting(true)
-        setError('')
+    let cancelled = false
+
+    const run = async () => {
+      try {
+        const configuration = await requestNexconnSession(accessToken)
+        if (cancelled) return
         await connectNexconn(configuration, displayName, (notice) => {
-          if (active) setCallNotice(notice)
+          if (!cancelled) {
+            setCallNotice(notice)
+          }
         })
-        if (!active || !hostRef.current) return
+        if (cancelled || !hostRef.current) return
         setNexconnSession(configuration)
-        unmountChat = mountNexconnChat(hostRef.current)
-      })
-      .catch((connectionError: unknown) => {
-        if (active) setError(getErrorMessage(connectionError))
-      })
-      .finally(() => {
-        if (active) setConnecting(false)
-      })
+        mountNexconnChat(hostRef.current)
+      } catch (connectionError: unknown) {
+        if (!cancelled) {
+          setError(getErrorMessage(connectionError))
+        }
+      } finally {
+        if (!cancelled) {
+          setConnecting(false)
+        }
+      }
+    }
+
+    void run()
     return () => {
-      active = false
-      unmountChat?.()
+      cancelled = true
       clearNexconnCallListener()
     }
-  }, [accessToken, displayName])
+  }, [accessToken, displayName, retryIndex])
+
+  const retryConnection = () => {
+    setError('')
+    setConnecting(true)
+    setRetryIndex((prev) => prev + 1)
+  }
 
   const openDirectChannel = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -181,6 +193,13 @@ export function CommunityPage() {
         <div className="community-error" role="alert">
           <AlertCircle size={16} />
           <div><strong>Community service unavailable</strong><span>{error}</span></div>
+          <button
+            className="button button-secondary community-retry-button"
+            onClick={retryConnection}
+            type="button"
+          >
+            Retry connection
+          </button>
         </div>
       )}
 

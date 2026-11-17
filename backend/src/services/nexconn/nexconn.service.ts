@@ -71,7 +71,7 @@ export async function issueNexconnSession(
     `https://${regionHosts[nexconnApiRegion]}`,
   );
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5_000);
+  const timeout = setTimeout(() => controller.abort(), 15_000);
 
   try {
     const response = await fetch(endpoint, {

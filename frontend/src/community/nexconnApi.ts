@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../services/apiBaseUrl'
+import { API_BASE_URL } from '../services/apiBaseUrl.ts'
 
 export interface NexconnSession {
   appKey: string
@@ -30,7 +30,7 @@ function isNexconnSession(value: unknown): value is NexconnSession {
 
 export async function requestNexconnSession(accessToken: string): Promise<NexconnSession> {
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 10_000)
+  const timeout = window.setTimeout(() => controller.abort(), 45_000)
   try {
     const response = await fetch(`${API_BASE_URL}/api/nexconn/session`, {
       method: 'POST',
@@ -48,9 +48,14 @@ export async function requestNexconnSession(accessToken: string): Promise<Nexcon
       throw new NexconnApiError('Nexconn returned an unreadable response.')
     }
     if (!response.ok) {
-      const message = isRecord(body) && typeof body.message === 'string'
-        ? body.message
-        : 'Nexconn could not create a chat session.'
+      let message = 'Nexconn could not create a chat session.'
+      if (isRecord(body)) {
+        if (typeof body.message === 'string') {
+          message = body.message
+        } else if (body.detail === 'Not Found' || response.status === 404) {
+          message = 'The backend API returned 404. Ensure the Render backend deployment is active.'
+        }
+      }
       throw new NexconnApiError(message)
     }
     if (!isRecord(body) || body.success !== true || !isNexconnSession(body.session)) {
@@ -60,7 +65,7 @@ export async function requestNexconnSession(accessToken: string): Promise<Nexcon
   } catch (error) {
     if (error instanceof NexconnApiError) throw error
     if (controller.signal.aborted) {
-      throw new NexconnApiError('The Nexconn connection timed out. Try again.')
+      throw new NexconnApiError('The Nexconn connection timed out while waking the server. Please click Retry.')
     }
     throw new NexconnApiError('Nexconn could not be reached. Check the backend connection.')
   } finally {
