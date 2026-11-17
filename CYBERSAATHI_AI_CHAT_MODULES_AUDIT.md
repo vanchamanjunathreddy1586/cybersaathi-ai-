@@ -3,7 +3,7 @@
 **Date:** November 18, 2026  
 **Repository:** `https://github.com/vanchamanjunathreddy1586/cybersaathi-ai-.git`  
 **Production Frontend:** `https://cybersaathiai.netlify.app`  
-**Production Backend:** `https://cybersaathi-api.onrender.com`  
+**Production Backend:** `https://cybersaathi-ai-2.onrender.com`  
 **Authentication & Database:** Supabase (`https://jksiqoaonnfysqkhavgf.supabase.co`)  
 **AI Engine:** Google Gemini (`gemini-3-flash-preview` via Google Generative Language API)  
 **Community Chat Provider:** Nexconn Singapore (`api.sg-light-api.com`, region `sg`)  
