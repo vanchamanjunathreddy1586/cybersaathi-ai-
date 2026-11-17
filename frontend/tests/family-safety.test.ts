@@ -4,6 +4,7 @@ import {
   FamilySafetyApiError,
   isDatabaseMigrationPendingError,
   sanitizeUserFacingError,
+  generateInviteCode,
   type FamilyCircleSummary,
   type FamilyCircleAlert,
 } from '../src/family-safety/familySafetyApi.ts'
@@ -14,6 +15,14 @@ test('FamilySafetyApiError captures message, status, and code', () => {
   assert.equal(err.message, 'Invalid invite code provided.')
   assert.equal(err.status, 400)
   assert.equal(err.code, 'INVALID_CODE')
+})
+
+test('generateInviteCode produces unique valid CS- prefixed codes', () => {
+  const code1 = generateInviteCode()
+  const code2 = generateInviteCode()
+  assert.match(code1, /^CS-[A-Z0-9]{6}$/)
+  assert.match(code2, /^CS-[A-Z0-9]{6}$/)
+  assert.notEqual(code1, code2)
 })
 
 test('Invite code formatting validator correctly accepts CS- prefixed codes and rejects invalid strings', () => {

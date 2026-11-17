@@ -5,11 +5,11 @@ const nodeEnv =
     ? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
     : undefined;
 
-const supabaseUrl = (
+export const supabaseUrl = (
   import.meta.env?.VITE_SUPABASE_URL ?? nodeEnv?.VITE_SUPABASE_URL
 )?.trim();
 
-const supabasePublishableKey = (
+export const supabasePublishableKey = (
   import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? nodeEnv?.VITE_SUPABASE_PUBLISHABLE_KEY
 )?.trim();
 
