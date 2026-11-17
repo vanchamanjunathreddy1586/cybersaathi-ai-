@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const nodeEnv =
   typeof globalThis !== 'undefined' && 'process' in globalThis
@@ -172,3 +172,17 @@ export const supabase =
         },
       })
     : null
+
+export function getAuthenticatedSupabaseClient(accessToken?: string): SupabaseClient {
+  if (accessToken && supabaseUrl && supabasePublishableKey) {
+    return createClient(supabaseUrl, supabasePublishableKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { persistSession: false },
+    })
+  }
+  if (supabase) {
+    return supabase
+  }
+  throw new Error('Supabase is not configured.')
+}
+

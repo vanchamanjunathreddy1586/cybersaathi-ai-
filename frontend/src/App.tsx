@@ -123,7 +123,7 @@ function App() {
           <div className="topbar-right">
             <span className="environment-badge">
               <span className="state-dot state-dot-connected" />
-              DEVELOPMENT
+              {import.meta.env.PROD ? 'PRODUCTION' : 'DEVELOPMENT'}
             </span>
             <AccountMenu />
           </div>
