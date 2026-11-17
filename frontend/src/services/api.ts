@@ -180,17 +180,7 @@ export function checkBackendHealth(
 export async function checkSupabaseHealth(
   signal?: AbortSignal,
 ): Promise<SupabaseHealthResponse> {
-  // If a dedicated backend API is configured, probe through the backend first
-  if (API_BASE_URL) {
-    try {
-      return await fetchJson('/api/health/supabase', isSupabaseHealthResponse, signal);
-    } catch (error) {
-      if (signal?.aborted) throw error;
-      // If backend probe fails, check whether Supabase is reachable directly
-    }
-  }
-
-  // Direct client-side Supabase database query probe
+  // 1. Direct client-side Supabase database probe
   if (supabase && !supabaseConfigurationError) {
     try {
       const { error } = await supabase
@@ -198,7 +188,7 @@ export async function checkSupabaseHealth(
         .select('id')
         .limit(1);
 
-      if (!error) {
+      if (!error || error.code === '42501') {
         return {
           success: true,
           service: 'supabase',
@@ -210,5 +200,18 @@ export async function checkSupabaseHealth(
     }
   }
 
-  return fetchJson('/api/health/supabase', isSupabaseHealthResponse, signal);
+  // 2. Probe through backend API endpoint if configured
+  if (API_BASE_URL) {
+    try {
+      return await fetchJson('/api/health/supabase', isSupabaseHealthResponse, signal);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+    }
+  }
+
+  if (supabaseConfigurationError) {
+    throw new ApiRequestError(supabaseConfigurationError, 'network');
+  }
+
+  throw new ApiRequestError('Supabase database connectivity check failed.', 'network');
 }

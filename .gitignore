@@ -31,3 +31,5 @@ pnpm-debug.log*
 **/.expo/
 web-build/
 mobile.backup*/
+.vercel
+/supabase/
