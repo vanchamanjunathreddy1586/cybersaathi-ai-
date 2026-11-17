@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cybersaathi-api
+    name: cybersaathi-ai-2
     env: node
     rootDir: backend
     plan: free

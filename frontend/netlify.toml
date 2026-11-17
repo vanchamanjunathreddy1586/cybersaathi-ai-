@@ -10,7 +10,7 @@
 # Proxy API requests to Render backend
 [[redirects]]
   from = "/api/*"
-  to = "https://cybersaathi-api.onrender.com/api/:splat"
+  to = "https://cybersaathi-ai-2.onrender.com/api/:splat"
   status = 200
   force = true
 
