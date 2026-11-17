@@ -8,6 +8,13 @@
   NODE_VERSION = "22"
   SECRETS_SCAN_OMIT_KEYS = "ALLOWED_ORIGINS,PORT,NODE_ENV,FRONTEND_URL"
 
+# Proxy API requests to Render backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://cybersaathi-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
 # SPA Fallback: Any route serves index.html with 200 HTTP status
 [[redirects]]
   from = "/*"
