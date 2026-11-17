@@ -9,32 +9,44 @@ const environmentSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   HOST: z.string().trim().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  FRONTEND_URL: z.string().url(),
+  FRONTEND_URL: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() !== '' ? value : 'https://cybersaathiai.netlify.app'),
+    z.string().url(),
+  ),
   ALLOWED_ORIGINS: z
     .string()
     .default('')
     .transform((value) => value.split(',').map((origin) => origin.trim()).filter(Boolean))
     .pipe(z.array(z.string().url())),
-  SUPABASE_URL: z.string().trim().url().refine(
-    (value) => !value.includes('your-project-ref'),
-    'Replace the Supabase URL example with a project URL.',
+  SUPABASE_URL: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() !== '' ? value : (process.env.VITE_SUPABASE_URL || 'https://jksiqoaonnfysqkhavgf.supabase.co')),
+    z.string().trim().url().refine(
+      (value) => !value.includes('your-project-ref'),
+      'Replace the Supabase URL example with a project URL.',
+    ),
   ),
-  SUPABASE_PUBLISHABLE_KEY: z.string().trim().min(1).refine(
-    (value) => !/^(your[-_]|replace[-_]|<.*>|changeme|example)/i.test(value),
-    'Replace the Supabase key example with a publishable key.',
+  SUPABASE_PUBLISHABLE_KEY: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() !== '' ? value : (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_nv66ynZ_CxXDww-4DdZkAA_diHYbIbj')),
+    z.string().trim().min(1).refine(
+      (value) => !/^(your[-_]|replace[-_]|<.*>|changeme|example)/i.test(value),
+      'Replace the Supabase key example with a publishable key.',
+    ),
   ),
   GOOGLE_SAFE_BROWSING_API_KEY: z.string().trim().optional(),
   VIRUSTOTAL_API_KEY: z.string().trim().optional(),
   AI_API_BASE_URL: z.preprocess(
-    (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+    (value) => typeof value === 'string' && value.trim() !== '' ? value : (process.env.AI_API_KEY ? 'https://generativelanguage.googleapis.com/v1beta/openai' : undefined),
     z.string().url().refine((value) => new URL(value).protocol === 'https:').optional(),
   ),
   AI_API_KEY: z.string().trim().optional(),
-  AI_MODEL: z.string().trim().optional(),
+  AI_MODEL: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() !== '' ? value : (process.env.AI_API_KEY ? 'gemini-3-flash-preview' : undefined),
+    z.string().trim().optional(),
+  ),
   NEXCONN_APP_KEY: z.string().trim().optional(),
   NEXCONN_APP_SECRET: z.string().trim().optional(),
   NEXCONN_API_REGION: z.preprocess(
-    (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+    (value) => typeof value === 'string' && value.trim() !== '' ? value : (process.env.NEXCONN_APP_KEY ? 'sg' : undefined),
     z.enum(['sg', 'us']).optional(),
   ),
   NEXCONN_CALLS_ENABLED: z.preprocess(
@@ -80,14 +92,15 @@ const environmentSchema = z.object({
 
   if (value.NODE_ENV === 'production' && value.ALLOWED_ORIGINS.some((origin) => {
     const parsedOrigin = new URL(origin);
-    return parsedOrigin.protocol !== 'https:' ||
+    const isLocal = ['localhost', '127.0.0.1'].includes(parsedOrigin.hostname);
+    return (!isLocal && parsedOrigin.protocol !== 'https:') ||
       parsedOrigin.username.length > 0 ||
       parsedOrigin.password.length > 0;
   })) {
     context.addIssue({
       code: 'custom',
       path: ['ALLOWED_ORIGINS'],
-      message: 'ALLOWED_ORIGINS must contain only HTTPS origins in production.',
+      message: 'ALLOWED_ORIGINS must contain only HTTPS origins or localhost in production.',
     });
   }
 
